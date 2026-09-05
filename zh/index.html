@@ -35,7 +35,7 @@
     <div class="brand"><div class="brand-mark">D5</div><div><strong>DLSS 5 REVIEW</strong><span>技术报告交互阅读器</span></div></div>
     <div class="nav-label">章节导航</div>
     <nav class="nav">
-      <a href="#verdict"><b>01</b>工程结论</a><a href="#shift"><b>02</b>范式变化</a><a href="#system"><b>03</b>系统与架构</a><a href="#stream"><b>04</b>流式推理</a><a href="#control"><b>05</b>艺术控制</a><a href="#evaluation"><b>06</b>评测证据</a><a href="#performance"><b>07</b>性能预算</a><a href="#limits"><b>08</b>局限与质疑</a><a href="#reading"><b>09</b>逐节阅读</a>
+      <a href="#verdict"><b>01</b>工程结论</a><a href="#shift"><b>02</b>范式变化</a><a href="#system"><b>03</b>系统与架构</a><a href="#stream"><b>04</b>流式推理</a><a href="#control"><b>05</b>艺术控制</a><a href="#evaluation"><b>06</b>评测证据</a><a href="#signals"><b>07</b>指标与渲染路径</a><a href="#performance"><b>08</b>性能预算</a><a href="#limits"><b>09</b>局限与质疑</a><a href="#reading"><b>10</b>逐节阅读</a>
     </nav>
     <div class="side-meta"><strong>依据</strong><br>NVIDIA 技术报告，2026-09-01<br>24 页 · 11 图 · 3 表<br><br><strong>综述版本</strong><br>2026-09-05</div>
   </aside>
@@ -121,6 +121,25 @@
         <div class="study-card"><b>vs Gemini · Character</b><div class="split"><span style="width:66.91%"></span><span style="width:33.09%"></span></div><strong>66.91%</strong> / 33.09%<br><small>272 judgments</small></div>
       </div>
       <div class="grid2" style="margin-top:14px"><div class="card fact"><h3>强证据</h3><p>对这 109 个已选场景和指定基线 prompt，DLSS 5 在全部报告的内容/结构保持指标上最佳；相对离线模型的优势很大且方向一致。</p></div><div class="card warning"><h3>不能外推</h3><p>场景选择、参与者构成、盲测协议细节、置信区间和跨游戏失败率均未完整披露。且用户被明确要求忽略内容差异，因此盲测只支持“看起来更像照片”。</p></div></div>
+    </section>
+
+
+    <section id="signals">
+      <div class="section-head"><div><div class="eyebrow">07 / METRICS & RENDER PATHS</div><h2>DINOv2、LPIPS 与 PT / non-PT：把输入、监督、评测分开</h2></div><p>这组概念经常被混为一个“质量分数”。实际上，DINOv2 和 LPIPS 衡量内容/感知距离，albedo / normal / depth 衡量结构保持；PT 与 non-PT 则描述 DLSS 5 之前的上游 renderer。</p></div>
+      <div class="grid2">
+        <div class="card fact"><h3>DINOv2 image feature</h3><p>输入 CG 与输出 RGB 先缩放到 <b>672×378</b>，再比较对应 ViT-B/14 patch 特征。DLSS 5 的 DINOv2 patch distance 为 <b>0.0364</b>，越低越接近作者内容、身份与布局；它不是照片真实度分数。</p><p class="note">feature-space distance ≠ pixel-wise RGB error；低距离不代表一定更“像照片”。</p></div>
+        <div class="card"><h3>Image LPIPS vs Albedo LPIPS</h3><p><b>Image LPIPS</b> 在最终 RGB 上比较学习到的感知特征；<b>Albedo LPIPS</b> 先从输入与输出估计固有色，再比较材质本色和区域布局。两者都是越低越接近输入，但都不替代盲测的照片真实感判断。</p><p class="note">LPIPS 看感知特征，SSIM 看局部结构，PSNR 看像素误差；要联合解读。</p></div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="card"><h3>Albedo / Normal / Depth</h3><ul><li><b>Albedo</b>：中性光照下的固有表面颜色，检查材质本色是否被改写。</li><li><b>Normal</b>：局部 3D 朝向；mean angular error 越低越好，Edge F1 检查几何边界。</li><li><b>Depth</b>：可见表面的距离排序；Spearman ρ、SSIM、Edge F1/Chamfer 检查顺序和断边。</li></ul></div>
+        <div class="card"><h3>训练期 ≠ 部署期 ≠ 评测期</h3><ol><li>训练期可用 albedo / normal / lighting-derived signals 做一致性监督。</li><li>部署期报告的条件是当前 RGB、motion vectors、carried temporal state 和 artistic controls；不要求这些 G-buffer 全部作为输入。</li><li>评测期用同一个 estimator 从输入/输出生成可比的 albedo、normal、depth 诊断图。</li></ol></div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="card"><span class="badge">PT / PATH TRACING</span><h3>上游光传输流程</h3><p><b>Scene geometry/materials/lights → sampled ray paths → temporal accumulation / denoise → RGB + motion vectors → DLSS 5 → display</b></p><p class="note">PT 可能包含 ReSTIR、去噪、曝光和 tone mapping；DLSS 5 不会补做缺失光线或改写几何。</p></div>
+        <div class="card"><span class="badge">NON-PT</span><h3>光栅 / RT 混合流程</h3><p><b>Scene → raster or raster/RT hybrid → lighting/shading/post effects → RGB + motion vectors → DLSS 5 → display</b></p><p class="note">non-PT 不是单一算法，可能是纯 raster、RT 阴影/反射或混合实时管线。</p></div>
+      </div>
+      <div class="verdict" style="margin-top:14px"><strong>Benchmark caution：</strong>报告包含 <b>20 个 PT</b> 与 <b>89 个 non-PT</b> 场景，但子集不同；拆分用于覆盖与描述，不能解释为 path tracing 的因果收益。若要做因果实验，应固定 scene、camera、asset、分辨率和控制量，只切换 renderer path。</div>
+      <p class="note" style="margin-top:14px">完整的双语术语、数值表和流程图见 <a href="../docs/rendering-pipelines.md">docs/rendering-pipelines.md</a>、<a href="../docs/terms.md">docs/terms.md</a> 与 <a href="../docs/benchmarks.md">docs/benchmarks.md</a>。</p>
     </section>
 
     <section id="performance">
