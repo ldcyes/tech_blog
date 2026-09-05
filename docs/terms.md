@@ -44,3 +44,29 @@
 | Edge F1 / Chamfer | Boundary preservation F1 and edge displacement distance. |
 | TMA | Blackwell Tensor Memory Accelerator for staging global-memory data into on-chip storage. |
 | FP8 accumulation mode | FP8 tensor inputs may accumulate in FP16 or FP32; this changes the correct peak-throughput denominator. |
+
+
+## 补充解释 / Extended notes
+
+### DINOv2 image feature distance
+
+DINOv2 是自监督 ViT 图像编码器。报告先将输入 CG 与输出 RGB 缩放到 672×378，再比较对应 ViT-B/14 patch 特征；DLSS 5 的 0.0364 越低表示越接近作者输入。它衡量内容/身份保持，不是照片真实度。
+
+DINOv2 is a self-supervised vision encoder. The report compares corresponding ViT-B/14 patch features after resizing to 672×378. Lower distance means closer content/identity alignment, not higher photographic realism.
+
+### Image LPIPS 与 albedo LPIPS
+
+Image LPIPS 在最终 RGB 上比较感知特征；albedo LPIPS 先从输入/输出估计 albedo，再比较固有色与材质布局。二者都是 lower-is-better distance，但不等价于人类照片真实度盲测。LPIPS、SSIM、PSNR 应结合读取：感知距离、结构相似度和像素误差的侧重点不同。
+
+Image LPIPS compares final RGB perceptual features. Albedo LPIPS compares estimated intrinsic-color maps. The latter is a targeted check against changing authored material color while adding photographic lighting cues.
+
+### Albedo / normal / depth
+
+- **Albedo / 反照率**：中性光照解释下的固有表面颜色，检查材质本色与区域布局。
+- **Normal / 表面法线**：局部 3D 朝向；mean angular error 越低越好，Edge F1 检查几何边界。
+- **Depth / 深度**：可见表面的距离排序；Spearman ρ 检查相对深度顺序，SSIM/Edge F1/Chamfer 检查局部结构与断边。
+- **Estimator / 估计器**：同时处理输入和输出 RGB、生成可比的 albedo/normal/depth 诊断图；它不是 DLSS 5 的部署输入。
+
+### PT 与 non-PT
+
+PT（path tracing）通过采样光线路径估计光传输，通常还包含 temporal accumulation 与 denoising；non-PT 是报告中的非 path-traced 子集，可能采用 raster、RT 或混合管线。两者都在 DLSS 5 之前提供 RGB 与运动对应。报告的 20 个 PT 与 89 个 non-PT 场景不是同一场景配对，因此只能描述覆盖，不能解释为 PT 的因果收益。
