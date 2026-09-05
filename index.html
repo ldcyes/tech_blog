@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DLSS 5 Technical Review | 技术综述</title>
+  <style>
+    :root{--bg:#080b0f;--panel:#11171d;--line:#2a3540;--text:#edf3f7;--muted:#9baab7;--green:#76b900;--cyan:#48c8da;--amber:#efb84b}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif}main{max-width:1060px;margin:auto;padding:9vh 24px}a{color:#a8e83b}.eyebrow{color:var(--green);font:800 .75rem ui-monospace,monospace;letter-spacing:.14em}h1{font-size:clamp(2.8rem,7vw,5.8rem);line-height:.95;letter-spacing:-.06em;margin:16px 0}h1 span{display:block;color:#8d9aa5;font-weight:500}p{color:var(--muted);max-width:760px}.box{margin-top:32px;padding:24px;border:1px solid var(--line);background:var(--panel);border-left:4px solid var(--green)}.links{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}.links a{padding:11px 16px;border:1px solid var(--line);text-decoration:none;background:#0d1217}.links a:hover{border-color:var(--green)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:30px}.card{padding:18px;border:1px solid var(--line);background:var(--panel)}.card b{display:block;color:var(--cyan);font-size:1.5rem}.card small{color:var(--muted)}footer{margin-top:50px;color:var(--muted);font-size:.82rem}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">REAL-TIME GENERATIVE RENDERING / NVIDIA DLSS 5</div>
+  <h1>DLSS 5 <span>Interactive technical review</span></h1>
+  <p>完整阅读 NVIDIA《DLSS 5: Real-Time Generative Rendering》24 页技术报告，并从 GPU 微架构、Transformer 计算量、显存预算、评测指标和工程边界进行双语解读。</p>
+  <div class="box"><b>Core conclusion / 核心结论</b><br>DLSS 5 is best understood as a renderer-conditioned generative display stage: the rendered frame anchors scene content, while learned photographic priors enrich materials and illumination. It increases appearance bandwidth; it does not recreate missing scene information.</div>
+  <div class="links"><a href="zh/index.html">中文交互报告 →</a><a href="en/index.html">English interactive report →</a><a href="docs/terms.md">专业术语 / Glossary</a><a href="docs/benchmarks.md">指标与 Benchmark / Metrics</a></div>
+  <div class="grid"><div class="card"><b>154M</b><small>reported Transformer parameters</small></div><div class="card"><b>≈8 ms</b><small>4K model execution on RTX 5090</small></div><div class="card"><b>731 MB</b><small>reported peak GPU memory</small></div></div>
+  <footer>Source: <a href="https://research.nvidia.com/labs/adlr/files/DLSS5_Report.pdf">NVIDIA DLSS 5 technical report</a>. The simulations in this repository are explanatory models, not NVIDIA implementation disclosures.</footer>
+</main></body></html>
