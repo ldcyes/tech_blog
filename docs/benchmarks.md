@@ -83,3 +83,24 @@ For a reproducible engineering benchmark, measure the following separately:
 6. **Ablations:** native renderer, 4× ray budget, DLSS 5 disabled, model/strength/mask variants, raster/PT inputs and output resolutions.
 
 The official report provides the first group of still-image benchmarks, but not the full dynamic and hardware-counter benchmark needed to identify the exact network.
+
+
+## How to read DINOv2, LPIPS and buffer metrics
+
+The report uses complementary metrics rather than one universal quality number:
+
+1. **DINOv2 patch distance** compares corresponding ViT-B/14 features after resizing both images to 672×378. It is a content/identity anchor; lower means closer to the authored CG image.
+2. **Image LPIPS** compares final RGB perceptual features (full-resolution in the report). It is a learned perceptual distance, not a realism score.
+3. **Albedo LPIPS / SSIM / PSNR** compare estimated intrinsic-color maps. They detect changes to authored material color and layout that a lighting-focused visual inspection may miss.
+4. **Normal and depth metrics** test orientation, ordering and discontinuity placement. The estimator is applied to both input and output, so these are aligned diagnostics rather than direct G-buffer ground truth.
+
+For the headline values and interpretation, see [rendering-pipelines.md](rendering-pipelines.md), which also explains why DINOv2 and LPIPS should be read alongside the blinded photographic-realism study.
+
+## PT and non-PT rendering workflow
+
+- **PT (path tracing):** scene geometry/materials/lights → sampled light paths → temporal accumulation and denoising → RGB + motion vectors → DLSS 5 → display.
+- **non-PT:** raster or raster/RT hybrid → lighting/shading/post effects → RGB + motion vectors → DLSS 5 → display.
+
+DLSS 5 is downstream of both branches. PT/non-PT labels describe the **input renderer**, not two DLSS 5 modes. The report covers 20 PT and 89 non-PT scenes, but these subsets differ; no causal “path tracing gain” can be inferred from their aggregate scores.
+
+A controlled benchmark should pair the same scene/camera/assets and toggle only the renderer path, while logging ray budget, denoiser, exposure/tone-map placement, motion-vector convention, DLSS 5 controls and GPU queue overlap.
