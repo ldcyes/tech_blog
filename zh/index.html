@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="NVIDIA DLSS 5 技术报告交互式中文综述：方法、架构、艺术控制、评测、性能与局限。">
+  <title>DLSS 5：实时生成式渲染｜交互式技术综述</title>
+  <style>
+    :root{--bg:#080b0f;--panel:#10151b;--panel2:#151c23;--line:#29333e;--line2:#394756;--text:#eef3f7;--muted:#9aa8b5;--green:#76b900;--green2:#9cdd28;--cyan:#46c7d9;--amber:#f2b84b;--red:#ff6b67;--nav:270px;--radius:8px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif}button,input,select{font:inherit}button{color:inherit}a{color:var(--green2);text-underline-offset:3px}::selection{background:var(--green);color:#071000}
+    .shell{display:grid;grid-template-columns:var(--nav) minmax(0,1fr);min-height:100vh}.side{position:sticky;top:0;height:100vh;padding:24px 18px;border-right:1px solid var(--line);background:#0b0f14;overflow:auto}.brand{display:flex;gap:11px;align-items:center;margin-bottom:24px}.brand-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--green);color:var(--green2);font-weight:900}.brand strong{display:block;letter-spacing:.04em}.brand span{font-size:.75rem;color:var(--muted)}
+    .nav-label,.eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}.nav{margin:9px 0 24px;display:grid;gap:4px}.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;color:#b7c2cb;text-decoration:none;border-left:2px solid transparent}.nav a:hover,.nav a.active{color:white;background:var(--panel);border-left-color:var(--green)}.nav b{font:700 .72rem/1 ui-monospace,monospace;color:#667583}.side-meta{padding-top:18px;border-top:1px solid var(--line);font-size:.78rem;color:var(--muted)}.side-meta strong{color:var(--text)}
+    main{min-width:0}.topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:12px clamp(20px,4vw,64px);border-bottom:1px solid var(--line);background:rgba(8,11,15,.94);backdrop-filter:blur(10px)}.status{display:flex;gap:8px;align-items:center;font-size:.78rem;color:var(--muted)}.dot{width:7px;height:7px;background:var(--green);border-radius:50%}.actions{display:flex;gap:8px}.btn{border:1px solid var(--line2);background:var(--panel);border-radius:5px;padding:7px 11px;cursor:pointer;text-decoration:none;font-size:.8rem}.btn:hover{border-color:var(--green);color:white}
+    section{padding:72px clamp(20px,5vw,78px);border-bottom:1px solid var(--line);scroll-margin-top:56px}.hero{padding-top:62px;min-height:calc(100vh - 50px);display:flex;flex-direction:column;justify-content:center}.kicker{display:flex;gap:9px;align-items:center;color:var(--green2);font-weight:800;font-size:.82rem;letter-spacing:.1em}.kicker:before{content:"";width:30px;height:2px;background:var(--green)}h1{margin:13px 0 18px;font-size:clamp(2.45rem,6vw,5.6rem);line-height:.95;letter-spacing:-.055em;max-width:1000px}h1 span{display:block;color:#8d99a4;font-weight:500}h2{margin:0 0 10px;font-size:clamp(1.8rem,3.8vw,3.2rem);line-height:1.05;letter-spacing:-.035em}h3{margin:0 0 9px;font-size:1.03rem}.lede{max-width:870px;color:#c0cad2;font-size:1.12rem}.section-head{display:grid;grid-template-columns:1fr minmax(260px,470px);gap:30px;align-items:end;margin-bottom:34px}.section-head p{margin:0;color:var(--muted)}
+    .verdict{margin-top:32px;padding:22px;border:1px solid var(--line2);border-left:4px solid var(--green);background:var(--panel);max-width:960px}.verdict strong{color:var(--green2)}.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px}.metric{padding:18px;background:var(--panel);border:1px solid var(--line)}.metric .num{font-size:1.75rem;font-weight:850;letter-spacing:-.04em}.metric .label{font-size:.79rem;color:var(--muted)}.metric .tag{margin-top:10px;font-size:.68rem;color:var(--cyan);font-family:ui-monospace,monospace}
+    .modebar{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.mode{border:1px solid var(--line2);padding:7px 11px;background:transparent;border-radius:999px;cursor:pointer;font-size:.8rem;color:#aebac4}.mode.active{background:var(--green);border-color:var(--green);color:#071000;font-weight:800}.lens-card{display:none;margin-top:12px;color:var(--muted);max-width:900px}.lens-card.active{display:block}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--line);padding:20px;border-radius:var(--radius)}.card p{color:var(--muted);margin:8px 0 0}.accent{color:var(--green2)}.warning{border-left:3px solid var(--amber)}.risk{border-left:3px solid var(--red)}.fact{border-left:3px solid var(--cyan)}
+    .compare{display:grid;grid-template-columns:1fr 70px 1fr;gap:12px;align-items:stretch}.compare-col{padding:22px;border:1px solid var(--line);background:var(--panel)}.compare-col ul{padding-left:19px;color:var(--muted)}.vs{display:grid;place-items:center;color:#697783;font:800 .8rem ui-monospace,monospace}.badge{display:inline-block;padding:3px 7px;border-radius:3px;background:#1c2630;color:var(--cyan);font:.72rem ui-monospace,monospace}.pipeline{margin-top:20px;display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.stage{min-height:132px;padding:15px;border:1px solid var(--line);background:var(--panel);cursor:pointer;position:relative}.stage:after{content:"→";position:absolute;right:-17px;top:48px;color:var(--green);z-index:2}.stage:last-child:after{display:none}.stage.active{border-color:var(--green);box-shadow:inset 0 -3px 0 var(--green)}.stage small{display:block;color:var(--muted);margin-top:7px}.stage-num{font:700 .68rem ui-monospace,monospace;color:var(--green2)}.detail{margin-top:10px;padding:18px;border:1px dashed var(--line2);color:#c3cdd5;background:#0c1116}
+    .arch{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}.specs{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.spec{padding:18px;border-top:2px solid var(--green);background:var(--panel)}.spec b{display:block;font-size:1.45rem}.spec span{font-size:.78rem;color:var(--muted)}.stack{display:grid;gap:8px}.stack div{padding:14px;border:1px solid var(--line);background:var(--panel)}.stack b{color:var(--green2)}
+    .sim{display:grid;grid-template-columns:1fr 1fr;gap:14px}.control-panel{padding:21px;background:var(--panel);border:1px solid var(--line)}.range-row{margin:17px 0}.range-row label{display:flex;justify-content:space-between;font-size:.83rem}.range-row output{color:var(--green2);font-family:ui-monospace,monospace}input[type=range]{width:100%;accent-color:var(--green)}.frames{height:175px;display:flex;align-items:flex-end;gap:6px;padding:18px;background:#090d11;border:1px solid var(--line)}.frame{flex:1;min-width:8px;background:var(--green);transition:.3s;height:50%;position:relative}.frame.buffered{background:#33404c}.frame:after{content:attr(data-n);position:absolute;top:-22px;left:50%;transform:translateX(-50%);font:10px ui-monospace,monospace;color:#93a1ad}.sim-result{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.sim-result div{padding:12px;background:#0b1015;border:1px solid var(--line)}.sim-result b{display:block;color:var(--green2);font-size:1.3rem}
+    .lab{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.canvas-wrap{border:1px solid var(--line);background:#05070a;position:relative;min-height:370px;display:grid;place-items:center;overflow:hidden}.canvas-wrap canvas{width:100%;height:100%;min-height:370px}.canvas-label{position:absolute;left:14px;top:12px;padding:4px 7px;background:rgba(0,0,0,.72);font:.7rem ui-monospace,monospace;color:#d9e2e8}.mask-buttons{display:flex;gap:7px;flex-wrap:wrap}.mask-btn{padding:7px 10px;border:1px solid var(--line2);background:#0c1116;cursor:pointer;border-radius:4px;font-size:.78rem}.mask-btn.active{border-color:var(--cyan);color:var(--cyan)}
+    .eval-layout{display:grid;grid-template-columns:.7fr 1.3fr;gap:14px}.metric-tabs{display:grid;gap:7px}.metric-tab{padding:13px 14px;border:1px solid var(--line);background:var(--panel);text-align:left;cursor:pointer}.metric-tab.active{border-color:var(--green);color:var(--green2)}.chart{padding:20px;border:1px solid var(--line);background:var(--panel)}.bar-row{display:grid;grid-template-columns:120px 1fr 70px;gap:10px;align-items:center;margin:14px 0}.track{height:13px;background:#202832;position:relative}.bar{height:100%;width:0;background:var(--green);transition:width .5s}.bar.baseline{background:#576573}.val{text-align:right;font:700 .78rem ui-monospace,monospace}.chart-note{font-size:.77rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:15px}.study{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:14px}.study-card{padding:15px;background:#0d1217;border:1px solid var(--line)}.split{height:9px;display:flex;margin:11px 0}.split span:first-child{background:var(--green)}.split span:last-child{background:#4a5864}.study-card small{color:var(--muted)}
+    .calc{display:grid;grid-template-columns:.9fr 1.1fr;gap:14px}.selects{display:grid;gap:14px}.selects select{width:100%;padding:10px;background:#0a0f14;color:white;border:1px solid var(--line2)}.budget{padding:22px;background:var(--panel);border:1px solid var(--line)}.budget-line{height:22px;background:#202832;position:relative;margin:20px 0 8px}.cost-fill{height:100%;background:var(--green);transition:.3s}.budget-marker{position:absolute;top:-7px;height:36px;width:2px;background:white}.budget-head{display:flex;justify-content:space-between;gap:12px}.budget-head b{font-size:2rem}.budget-head span{color:var(--muted)}.assumption{font-size:.75rem;color:var(--amber)}
+    .limitations{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.limit{padding:20px;background:var(--panel);border:1px solid var(--line)}.limit .level{font:700 .7rem ui-monospace,monospace;color:var(--amber)}.limit p{color:var(--muted)}
+    .reader{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.chapter{padding:17px;border:1px solid var(--line);background:var(--panel)}.chapter .pages{font:700 .7rem ui-monospace,monospace;color:var(--green2)}.chapter p{font-size:.86rem;color:var(--muted)}details{border-top:1px solid var(--line);padding:13px 0}summary{cursor:pointer;font-weight:750}.glossary{columns:2;column-gap:26px}.term{break-inside:avoid;padding:10px 0;border-bottom:1px solid var(--line)}.term b{color:var(--cyan)}.term span{display:block;color:var(--muted);font-size:.86rem}
+    footer{padding:36px clamp(20px,5vw,78px);color:var(--muted);font-size:.82rem}.sources{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+    @media(max-width:980px){.shell{grid-template-columns:1fr}.side{display:none}.metric-grid{grid-template-columns:repeat(2,1fr)}.pipeline{grid-template-columns:1fr 1fr}.stage:after{display:none}.arch,.sim,.lab,.eval-layout,.calc{grid-template-columns:1fr}.reader{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){section{padding:54px 18px}.topbar{padding:10px 14px}.status span:last-child{display:none}.section-head{grid-template-columns:1fr}.metric-grid,.grid2,.limitations,.reader,.study{grid-template-columns:1fr}.compare{grid-template-columns:1fr}.vs{padding:5px}.pipeline{grid-template-columns:1fr}.specs{grid-template-columns:1fr 1fr}.glossary{columns:1}.bar-row{grid-template-columns:88px 1fr 58px}h1{font-size:2.65rem}}
+    @media print{.side,.topbar,.modebar,.actions{display:none}.shell{display:block}section{break-inside:avoid;padding:30px}.hero{min-height:auto}.card,.metric,.chart{border-color:#bbb}body{background:white;color:black}.panel,.card,.metric{background:white}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><div class="brand-mark">D5</div><div><strong>DLSS 5 REVIEW</strong><span>技术报告交互阅读器</span></div></div>
+    <div class="nav-label">章节导航</div>
+    <nav class="nav">
+      <a href="#verdict"><b>01</b>工程结论</a><a href="#shift"><b>02</b>范式变化</a><a href="#system"><b>03</b>系统与架构</a><a href="#stream"><b>04</b>流式推理</a><a href="#control"><b>05</b>艺术控制</a><a href="#evaluation"><b>06</b>评测证据</a><a href="#performance"><b>07</b>性能预算</a><a href="#limits"><b>08</b>局限与质疑</a><a href="#reading"><b>09</b>逐节阅读</a>
+    </nav>
+    <div class="side-meta"><strong>依据</strong><br>NVIDIA 技术报告，2026-09-01<br>24 页 · 11 图 · 3 表<br><br><strong>综述版本</strong><br>2026-09-05</div>
+  </aside>
+  <main>
+    <header class="topbar"><div class="status"><i class="dot"></i><span>完整阅读 24 / 24 页</span></div><div class="actions"><a class="btn" href="https://research.nvidia.com/labs/adlr/files/DLSS5_Report.pdf" target="_blank" rel="noreferrer">原始 PDF ↗</a><button class="btn" onclick="window.print()">打印</button></div></header>
+
+    <section class="hero" id="verdict">
+      <div class="kicker">REAL-TIME GENERATIVE RENDERING</div>
+      <h1>DLSS 5 <span>不是更聪明的超分，而是显示前的生成式着色器。</span></h1>
+      <p class="lede">它把传统渲染帧作为不可放弃的几何与内容锚点，再用从真实照片学到的外观先验重写材质与照明表现。核心突破是把一次、确定性、像素空间扩散压进实时帧预算；核心风险则是“看起来更真实”并不等于“更物理正确”。</p>
+      <div class="verdict"><strong>一句话工程判断：</strong>DLSS 5 是一个后置、renderer-conditioned、causal 的 154M Transformer。它扩大了实时渲染的“外观带宽”，但没有扩大场景的真实信息量；上游缺失的几何、错误的遮挡和退化边缘仍然无法被可靠恢复。</div>
+      <div class="metric-grid">
+        <div class="metric"><div class="num">154M</div><div class="label">Transformer 参数量</div><div class="tag">REPORT §2.6</div></div>
+        <div class="metric"><div class="num">1 step</div><div class="label">确定性像素空间扩散</div><div class="tag">REPORT §2.3–2.4</div></div>
+        <div class="metric"><div class="num">≈8 ms</div><div class="label">4K / RTX 5090 模型执行</div><div class="tag">REPORT §4.3.3</div></div>
+        <div class="metric"><div class="num">731 MB</div><div class="label">推理峰值显存</div><div class="tag">REPORT §4.3.3</div></div>
+      </div>
+      <div class="modebar" aria-label="阅读视角"><button class="mode active" data-lens="claim">论文主张</button><button class="mode" data-lens="engineer">工程解读</button><button class="mode" data-lens="skeptic">审慎视角</button></div>
+      <div class="lens-card active" data-card="claim">NVIDIA 的中心论点：DLSS 5 在保持作者内容和结构的同时，达到与 GPT Image 2 相当、优于 Gemini 3 Pro 的感知照片真实度，并在单张消费级 GPU 上实时运行。</div>
+      <div class="lens-card" data-card="engineer">从系统角度，它是以 RGB、运动矢量、历史状态和控制量为输入的 learned post-process；训练期使用 albedo / normal / lighting 一致性约束，但部署时不需要这些 G-buffer。</div>
+      <div class="lens-card" data-card="skeptic">报告没有公开网络层数、token 化/窗口、训练集规模、蒸馏损失、时域状态尺寸、不同 GPU 性能、端到端延迟或失败率分布；因此“产品化可用”仍需独立动态测试验证。</div>
+    </section>
+
+    <section id="shift">
+      <div class="section-head"><div><div class="eyebrow">01 / PARADIGM SHIFT</div><h2>从重建目标，转向生成最终外观</h2></div><p>DLSS 1–4 的目标仍由高成本渲染参考定义；DLSS 5 首次不再逼近一个传统渲染目标，而是在内容保持集合内选择“更像照片”的结果。</p></div>
+      <div class="compare">
+        <div class="compare-col"><span class="badge">RECONSTRUCTION</span><h3>Super Resolution / Frame Generation / Ray Reconstruction</h3><ul><li>估计更多像素、更多帧或更多光线的渲染结果</li><li>参考目标来自传统 renderer</li><li>上限受 renderer 可表达与可模拟内容约束</li><li>主要价值：更低成本逼近更高渲染预算</li></ul></div>
+        <div class="vs">VERSUS</div>
+        <div class="compare-col"><span class="badge">GENERATION</span><h3>DLSS 5 / 3D-Guided Neural Rendering</h3><ul><li>直接生成最终显示 RGB</li><li>目标来自照片外观统计先验</li><li>传统帧负责“是什么”，模型决定“看起来怎样”</li><li>主要价值：补入实时资产与光传输难以承担的外观线索</li></ul></div>
+      </div>
+      <div class="grid2" style="margin-top:14px"><div class="card fact"><h3>论文的概念公式</h3><p>在所有保持输入场景属性的图像集合 C(r) 中，选择照片分布概率最高的结果：<br><span class="accent">fθ(r) ≈ arg max pphoto(x), x ∈ C(r)</span>。这是意图描述，不是公开的实际训练目标。</p></div><div class="card warning"><h3>关键边界</h3><p>C(r) 不是运行时硬约束。身份、结构、材质和光影组织的保持，依赖训练监督形成的统计倾向；论文明确承认每次生成变化都存在漂移风险。</p></div></div>
+    </section>
+
+    <section id="system">
+      <div class="section-head"><div><div class="eyebrow">02 / SYSTEM</div><h2>一帧如何穿过 DLSS 5</h2></div><p>点击各阶段查看输入、约束和它没有做的事。DLSS 5 位于传统 raster / RT / PT 之后，可与 Super Resolution、Ray Reconstruction 和 Frame Generation 独立组合。</p></div>
+      <div class="pipeline" role="tablist">
+        <button class="stage active" data-stage="0"><span class="stage-num">01</span><h3>传统渲染帧</h3><small>RGB 锚定可见内容、边界、构图与局部材质证据</small></button>
+        <button class="stage" data-stage="1"><span class="stage-num">02</span><h3>运动与历史</h3><small>Engine motion vectors + carried temporal state</small></button>
+        <button class="stage" data-stage="2"><span class="stage-num">03</span><h3>艺术条件</h3><small>模型、结构、色调、手动与语义遮罩</small></button>
+        <button class="stage" data-stage="3"><span class="stage-num">04</span><h3>单步生成</h3><small>Pixel-space Transformer；一次联合前向</small></button>
+        <button class="stage" data-stage="4"><span class="stage-num">05</span><h3>最终显示 RGB</h3><small>确定性、因果、逐帧输出</small></button>
+      </div>
+      <div class="detail" id="stageDetail">RGB 是部署时最强的稠密、像素对齐条件。它同时包含内容和已有外观：跟得太紧无法提升真实感，放得太松则会改变作者内容。</div>
+      <div class="arch" style="margin-top:18px">
+        <div class="specs"><div class="spec"><b>Transformer</b><span>注意力层继承 DLSS 4 的速度/质量设计点</span></div><div class="spec"><b>Pixel space</b><span>无 VAE encode–decode，避免细边缘与纹理重绘漂移</span></div><div class="spec"><b>FP8 mostly</b><span>多数 GEMM / attention 用 FP8，敏感 GEMM 保留 FP16</span></div><div class="spec"><b>TMA</b><span>面向 Blackwell 优化，全局内存到片上存储的数据搬运</span></div></div>
+        <div class="stack"><div><b>训练期额外监督</b><br>Albedo：约束固有色<br>Normal：约束局部朝向<br>Lighting-derived signals：约束直射光与阴影组织</div><div><b>部署期输入</b><br>当前 RGB + motion vectors + temporal state + artistic controls</div><div><b>报告未公开</b><br>层数/宽度、注意力窗口、状态尺寸、训练数据、蒸馏流程、精确 loss 配方</div></div>
+      </div>
+    </section>
+
+    <section id="stream">
+      <div class="section-head"><div><div class="eyebrow">03 / STREAMING</div><h2>为什么必须逐帧因果，而不是视频分块</h2></div><p>离线视频模型通过 K 帧联合上下文换取稳定性，但会引入 K−1 个帧间隔的额外等待，并让工作集随 K 增长。拖动 K 观察差异。</p></div>
+      <div class="sim">
+        <div class="control-panel"><div class="range-row"><label for="chunk">Chunk 长度 K <output id="kOut">3 帧</output></label><input id="chunk" type="range" min="1" max="8" value="3"></div><div class="range-row"><label for="fps">基础帧率 <output id="fpsOut">60 FPS</output></label><input id="fps" type="range" min="30" max="240" step="30" value="60"></div><div class="sim-result"><div><span>分块额外等待</span><b id="latencyOut">33.3 ms</b></div><div><span>相对工作集</span><b id="memoryOut">3×</b></div></div><p class="chart-note">DLSS 5 的 frame-wise 路径对应 K=1：不等待未来帧，峰值推理内存对序列长度为 O(1)。这不代表没有模型执行延迟。</p></div>
+        <div><div class="frames" id="frames" aria-label="分块缓冲示意"></div><div class="grid2" style="margin-top:10px"><div class="card"><h3>Chunk-based</h3><p>K 帧缓存后联合前向；吞吐友好，但交互等待和显存随 K 上升。</p></div><div class="card"><h3>DLSS 5 frame-wise</h3><p>一帧输入、一帧增强；历史被压入 carried state，不保存无限序列。</p></div></div></div>
+      </div>
+    </section>
+
+    <section id="control">
+      <div class="section-head"><div><div class="eyebrow">04 / ART DIRECTION</div><h2>不是一个“真实度”旋钮，而是可定向的外观映射</h2></div><p>当前系统提供少量 curated appearance models，并把结构与色调拆成近似高/低空间频率控制；遮罩可限定增强发生在哪里。</p></div>
+      <div class="lab">
+        <div class="canvas-wrap"><canvas id="lookCanvas" width="900" height="600"></canvas><div class="canvas-label">抽象信号演示 · 非 DLSS 5 实际输出</div></div>
+        <div class="control-panel">
+          <div class="range-row"><label for="structure">Structure intensity <output id="structureOut">0.70</output></label><input id="structure" type="range" min="0" max="1" step="0.01" value="0.7"></div>
+          <div class="range-row"><label for="tone">Tone intensity <output id="toneOut">0.55</output></label><input id="tone" type="range" min="0" max="1" step="0.01" value="0.55"></div>
+          <label class="nav-label" style="display:block;margin-bottom:8px">作用区域</label><div class="mask-buttons"><button class="mask-btn active" data-mask="all">全局</button><button class="mask-btn" data-mask="center">主体区域</button><button class="mask-btn" data-mask="outer">环境区域</button></div>
+          <div class="grid2" style="margin-top:18px"><div class="card"><h3>Structure</h3><p>控制局部对比、环境遮蔽、反射、次表面散射等高频外观细节。</p></div><div class="card"><h3>Tone</h3><p>控制大尺度亮度、颜色响应与环境/间接光照等低频变化。</p></div></div>
+          <p class="chart-note">零强度配置为无增强输入，单位强度应用完整学习变换。实际控制量作为 learned conditioning 输入，不是推理后的简单滤镜。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="evaluation">
+      <div class="section-head"><div><div class="eyebrow">05 / EVIDENCE</div><h2>109 个场景上的证据，证明了什么</h2></div><p>指标分成两类：照片真实感由盲测衡量；内容/身份和结构保持由 DINOv2、LPIPS 及估计出的 albedo / normal / depth 衡量。两类不能互相替代。</p></div>
+      <div class="eval-layout">
+        <div class="metric-tabs"><button class="metric-tab active" data-metric="content">内容 / 身份</button><button class="metric-tab" data-metric="albedo">Albedo</button><button class="metric-tab" data-metric="normal">Normal</button><button class="metric-tab" data-metric="depth">Depth</button></div>
+        <div class="chart"><h3 id="chartTitle">DINOv2 patch distance ↓</h3><div id="bars"></div><div class="chart-note" id="chartNote">越低越好；在 672×378 的对应 ViT-B/14 patch 特征上计算。它衡量与 CG 输入的内容/身份距离，不衡量照片真实感。</div></div>
+      </div>
+      <h3 style="margin-top:28px">盲测：感知照片真实度</h3>
+      <div class="study">
+        <div class="study-card"><b>vs GPT Image 2</b><div class="split"><span style="width:50.63%"></span><span style="width:49.37%"></span></div><strong>50.63%</strong> / 49.37%<br><small>Overall · 394 judgments</small></div>
+        <div class="study-card"><b>vs GPT · Character</b><div class="split"><span style="width:57.74%"></span><span style="width:42.26%"></span></div><strong>57.74%</strong> / 42.26%<br><small>265 judgments</small></div>
+        <div class="study-card"><b>vs Gemini 3 Pro</b><div class="split"><span style="width:62%"></span><span style="width:38%"></span></div><strong>62.00%</strong> / 38.00%<br><small>Overall · 400 judgments</small></div>
+        <div class="study-card"><b>vs Gemini · Character</b><div class="split"><span style="width:66.91%"></span><span style="width:33.09%"></span></div><strong>66.91%</strong> / 33.09%<br><small>272 judgments</small></div>
+      </div>
+      <div class="grid2" style="margin-top:14px"><div class="card fact"><h3>强证据</h3><p>对这 109 个已选场景和指定基线 prompt，DLSS 5 在全部报告的内容/结构保持指标上最佳；相对离线模型的优势很大且方向一致。</p></div><div class="card warning"><h3>不能外推</h3><p>场景选择、参与者构成、盲测协议细节、置信区间和跨游戏失败率均未完整披露。且用户被明确要求忽略内容差异，因此盲测只支持“看起来更像照片”。</p></div></div>
+    </section>
+
+    <section id="performance">
+      <div class="section-head"><div><div class="eyebrow">06 / BUDGET</div><h2>8 ms 意味着什么</h2></div><p>报告只给出 RTX 5090、3840×2160：模型约 8 ms、峰值显存 731 MB。下面用像素数线性缩放作粗略预算实验；推算值不是 NVIDIA 实测。</p></div>
+      <div class="calc">
+        <div class="control-panel selects"><label>输出分辨率<select id="resolution"><option value="1">3840×2160 · 4K（实测）</option><option value="0.4444">2560×1440 · 推算</option><option value="0.25">1920×1080 · 推算</option></select></label><label>目标帧率<select id="targetFps"><option>30</option><option selected>60</option><option>90</option><option>120</option><option>144</option><option>240</option></select></label><div class="card warning"><h3>共享 GPU 的含义</h3><p>这 8 ms 要与游戏 simulation、geometry、base rendering、RT/PT、SR/RR/FG 等竞争同一 GPU 预算。它不是“免费”的后处理。</p></div></div>
+        <div class="budget"><div class="budget-head"><div><span>DLSS 5 估算成本</span><br><b id="costMs">8.00 ms</b></div><div style="text-align:right"><span>整帧预算</span><br><b id="frameMs">16.67 ms</b></div></div><div class="budget-line"><div class="cost-fill" id="costFill" style="width:48%"></div><i class="budget-marker" id="budgetMarker" style="left:100%"></i></div><div id="budgetText" class="accent">占 60 FPS 整帧预算的 48.0%</div><p class="assumption" id="assumption">4K 为报告实测；其他分辨率仅假设成本随像素数线性变化，未考虑固定开销、带宽、占用率与 kernel scaling。</p><div class="grid2" style="margin-top:20px"><div class="card"><h3>理论独占上限</h3><p><span class="accent" id="exclusiveFps">≈125 FPS</span><br>仅 1 / 模型时间，不含游戏。</p></div><div class="card"><h3>FP8 收益</h3><p><span class="accent">≈2× faster</span><br>相对等效 FP16 实现；仅小幅测得质量差异。</p></div></div></div>
+      </div>
+    </section>
+
+    <section id="limits">
+      <div class="section-head"><div><div class="eyebrow">07 / LIMITATIONS</div><h2>最重要的局限，不在平均分数里</h2></div><p>报告在 §5 对边界的表述相当明确：DLSS 5 优化的是照片外观概率，不是物理真值；它宁愿保留坏输入，也不愿随意发明替代内容。</p></div>
+      <div class="limitations">
+        <div class="limit"><div class="level">FUNDAMENTAL</div><h3>感知真实 ≠ 物理正确</h3><p>它不收敛到 renderer-defined ground truth，也不补做被省略的光传输。照片统计偏好可能制造“熟悉的真实感”，却偏离场景真实光源与材质。</p></div>
+        <div class="limit"><div class="level">INPUT-BOUND</div><h3>信息不存在，就不能可靠恢复</h3><p>缺失几何、错误身份、严重 aliasing、弱边界和损坏细节可能被保留或放大。模型输出 RGB，不修改 geometry、scene state 或 G-buffer。</p></div>
+        <div class="limit"><div class="level">DOMAIN</div><h3>只针对照片写实</h3><p>当前目标不适合 voxel、插画、卡通等强风格化视觉语言。追求照片真实可能直接破坏原有 art direction。</p></div>
+        <div class="limit"><div class="level">GENERALIZATION</div><h3>分布漂移仍是未知数</h3><p>不同 shading convention、材质分布、场景统计或 artifact pattern 可能超出训练分布。报告未给系统性 OOD 压测。</p></div>
+        <div class="limit"><div class="level">TEMPORAL</div><h3>“训练为稳定”不是零伪影保证</h3><p>运动矢量与 carried state 提供时间对应，但报告没有公开动态视频指标、长序列漂移、disocclusion、粒子/透明材质等 corner case 的分布。</p></div>
+        <div class="limit"><div class="level">EVALUATION</div><h3>基线对比并非同类实时系统</h3><p>GPT Image 2 与 Gemini 3 Pro 是托管离线编辑模型；对比证明专用模型的实时/对齐优势，但不能替代与传统后处理、实时 neural rendering 或人工优化的横向比较。</p></div>
+      </div>
+      <div class="verdict"><strong>我的判断：</strong>“生成式着色器”会成为新管线层，但第一代产品最可能先在皮肤、头发、植被、织物和局部间接光等高统计规律区域创造价值。真正决定可用性的，不是静态截图峰值，而是低置信场景的自动退化、遮罩工具成本、跨镜头一致性与性能尾延迟。</div>
+    </section>
+
+    <section id="reading">
+      <div class="section-head"><div><div class="eyebrow">08 / READING MAP</div><h2>24 页报告的阅读地图</h2></div><p>如果只读 10 分钟：看第 3–8 页理解方法，第 14–17 页看证据，第 18–20 页看作者主动承认的边界。</p></div>
+      <div class="reader">
+        <div class="chapter"><div class="pages">P.1–4</div><h3>摘要与问题定义</h3><p>重建上限、照片先验、四项产品要求，以及 C(r) 内最大化照片概率的概念公式。</p></div>
+        <div class="chapter"><div class="pages">P.4–8</div><h3>系统设计</h3><p>RGB grounding、训练期属性一致性、单步/像素空间扩散、逐帧因果推理、154M backbone。</p></div>
+        <div class="chapter"><div class="pages">P.9–12</div><h3>艺术控制</h3><p>离散 appearance models、Structure/Tone 强度、开发者遮罩和皮肤语义自动遮罩。</p></div>
+        <div class="chapter"><div class="pages">P.12–17</div><h3>评测</h3><p>109 场景、离线基线、12 项对齐指标、794 次有效盲测、PT/non-PT 拆分。</p></div>
+        <div class="chapter"><div class="pages">P.17–20</div><h3>性能与局限</h3><p>4K 8 ms / 731 MB；物理真值差异、first-principles scale gap、风格与输入质量边界。</p></div>
+        <div class="chapter"><div class="pages">P.20–24</div><h3>结论与文献</h3><p>未来方向：质量、泛化、效率、时间鲁棒性，以及更细空间/语义/风格/时间控制。</p></div>
+      </div>
+      <h3 style="margin-top:30px">术语速查</h3>
+      <div class="glossary">
+        <div class="term"><b>3D-guided neural rendering</b><span>由传统渲染帧严格锚定内容的生成式最终着色阶段。</span></div>
+        <div class="term"><b>Grounded conditioning</b><span>用像素对齐 RGB 与运动矢量约束生成，不是用文本描述猜场景。</span></div>
+        <div class="term"><b>One-step diffusion</b><span>每帧只做一次确定性推理，不进行多步随机采样。</span></div>
+        <div class="term"><b>Pixel-space</b><span>不经过有损 VAE latent 往返，直接 RGB → RGB。</span></div>
+        <div class="term"><b>Carried temporal state</b><span>从过去帧延续的有限状态；论文未公开具体实现和容量。</span></div>
+        <div class="term"><b>TMA</b><span>Blackwell Tensor Memory Accelerator，用于高效搬运全局与片上数据。</span></div>
+      </div>
+      <details><summary>评测方法的三个细节</summary><p>所有输出为 3840×2160；DINOv2 特征比较先缩放到 672×378，image LPIPS 在完整 4K 上计算。结构指标依赖一个同时处理输入与输出的单一 estimator 提取 albedo / normal / depth。PT 与 non-PT 子集场景不同，因此差值只能描述，不能解释为 path tracing 的因果收益。</p></details>
+      <details><summary>论文最诚实的一句话可如何转述</summary><p>作者明确说明：运行时没有机制强制内容保持；一致性监督只在训练期起作用，每个生成变化都带来偏离作者场景的风险。这是理解 DLSS 5 产品边界的关键。</p></details>
+    </section>
+
+    <footer><strong>资料范围</strong>：本综述完整覆盖 NVIDIA 技术报告正文、11 幅图、3 张表、贡献者与参考文献。交互模拟用于解释关系，未冒充官方实现或实测结果。<div class="sources"><a href="https://research.nvidia.com/labs/adlr/DLSS5/" target="_blank" rel="noreferrer">NVIDIA ADLR 项目页</a><a href="https://research.nvidia.com/labs/adlr/files/DLSS5_Report.pdf" target="_blank" rel="noreferrer">技术报告 PDF</a><a href="https://research.nvidia.com/labs/adlr/DLSS4" target="_blank" rel="noreferrer">DLSS 4 技术报告</a><a href="https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf" target="_blank" rel="noreferrer">RTX Blackwell 架构</a></div></footer>
+  </main>
+</div>
+<script>
+const stageText=[
+  'RGB 是部署时最强的稠密、像素对齐条件。它同时包含内容和已有外观：跟得太紧无法提升真实感，放得太松则会改变作者内容。',
+  '运动矢量建立当前帧到过去帧的对应；有限历史状态承担长序列连续性。系统不读取未来帧，因此是 causal。报告没有披露 state 的表示、尺寸或更新方程。',
+  '开发者选择 curated model，并用结构/色调强度和空间、语义遮罩解决一幅输入可对应多种照片外观的歧义。相同序列与设置会得到相同输出。',
+  '154M Transformer 在像素空间完成一次确定性扩散前向。多数 GEMM/attention 为 FP8，少数数值敏感 GEMM 用 FP16，并针对 Blackwell TMA 优化。',
+  '输出是最终显示图像，而不是新的 G-buffer，也不会回写 geometry、材质或 scene state。后续帧仍由游戏引擎按自身状态继续渲染。'
+];
+document.querySelectorAll('.stage').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.stage').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById('stageDetail').textContent=stageText[i]});
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{document.querySelectorAll('.mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.lens-card').forEach(x=>x.classList.toggle('active',x.dataset.card===b.dataset.lens))});
+
+const chunk=document.getElementById('chunk'),fps=document.getElementById('fps'),frames=document.getElementById('frames');
+function updateStream(){const k=+chunk.value,f=+fps.value;document.getElementById('kOut').value=k+' 帧';document.getElementById('fpsOut').value=f+' FPS';document.getElementById('latencyOut').textContent=((k-1)*1000/f).toFixed(1)+' ms';document.getElementById('memoryOut').textContent=k+'×';frames.innerHTML='';for(let i=1;i<=8;i++){let el=document.createElement('div');el.className='frame '+(i<=k?'buffered':'');el.dataset.n=i;el.style.height=(34+(i%3)*18)+'%';frames.appendChild(el)}}chunk.oninput=updateStream;fps.oninput=updateStream;updateStream();
+
+const cvs=document.getElementById('lookCanvas'),ctx=cvs.getContext('2d');let mask='all';
+function hash(x,y){return Math.sin(x*12.9898+y*78.233)*43758.5453%1}
+function drawLab(){const s=+document.getElementById('structure').value,t=+document.getElementById('tone').value,w=cvs.width,h=cvs.height,img=ctx.createImageData(w,h);for(let y=0;y<h;y++){for(let x=0;x<w;x++){const dx=(x-w*.5)/(w*.28),dy=(y-h*.5)/(h*.34),inside=dx*dx+dy*dy<1;const apply=mask==='all'||(mask==='center'&&inside)||(mask==='outer'&&!inside);const a=apply?1:0;const low=.48+.26*Math.sin(x/150)+.14*Math.cos(y/110);const fine=.5+.5*Math.sin(x*.19)*Math.cos(y*.16)+.16*hash(x,y);let lum=.18+.56*low+.22*fine;lum+=(t*.24*(inside?.8:-.15))*a;lum+=(fine-.5)*s*.42*a;const warm=inside?1:.35;const p=(y*w+x)*4;img.data[p]=Math.max(0,Math.min(255,255*(lum*(.72+.30*warm)+t*.08*a)));img.data[p+1]=Math.max(0,Math.min(255,255*(lum*(.88+.05*warm))));img.data[p+2]=Math.max(0,Math.min(255,255*(lum*(1.02-.28*warm)-t*.05*a)));img.data[p+3]=255}}ctx.putImageData(img,0,0);ctx.strokeStyle='#76b900';ctx.lineWidth=3;ctx.setLineDash([12,10]);ctx.beginPath();ctx.ellipse(w*.5,h*.5,w*.28,h*.34,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);document.getElementById('structureOut').value=s.toFixed(2);document.getElementById('toneOut').value=t.toFixed(2)}
+['structure','tone'].forEach(id=>document.getElementById(id).oninput=drawLab);document.querySelectorAll('.mask-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.mask-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');mask=b.dataset.mask;drawLab()});drawLab();
+
+const metricData={
+ content:{title:'DINOv2 patch distance ↓',vals:[['DLSS 5',.0364],['GPT Image 2',.1405],['Gemini 3 Pro',.1223]],low:true,note:'越低越好；在 672×378 的对应 ViT-B/14 patch 特征上计算。它衡量与 CG 输入的内容/身份距离，不衡量照片真实感。'},
+ albedo:{title:'Albedo SSIM ↑',vals:[['DLSS 5',.888],['GPT Image 2',.787],['Gemini 3 Pro',.804]],low:false,note:'越高越好；比较模型从输入与生成图像估计的反照率结构。报告另给出 LPIPS 与 PSNR，DLSS 5 同样最佳。'},
+ normal:{title:'Mean normal angular error ↓',vals:[['DLSS 5',12.15],['GPT Image 2',18.27],['Gemini 3 Pro',17.84]],low:true,note:'单位为度，越低越好；衡量局部表面朝向一致性。Acc@11.25° 与 edge F1 上 DLSS 5 也最佳。'},
+ depth:{title:'Depth Spearman ρ ↑',vals:[['DLSS 5',.933],['GPT Image 2',.919],['Gemini 3 Pro',.898]],low:false,note:'越高越好；衡量相对深度排序。SSIM、edge F1 与 edge Chamfer 共同补充空间结构和断边保持。'}
+};
+function renderMetric(key){const d=metricData[key],max=Math.max(...d.vals.map(x=>x[1])),min=Math.min(...d.vals.map(x=>x[1]));document.getElementById('chartTitle').textContent=d.title;document.getElementById('chartNote').textContent=d.note;document.getElementById('bars').innerHTML=d.vals.map((x,i)=>{let score=d.low?(max-x[1])/(max-min||1):(x[1]-min)/(max-min||1);let width=35+score*65;return `<div class="bar-row"><span>${x[0]}</span><div class="track"><div class="bar ${i?'baseline':''}" style="width:${width}%"></div></div><span class="val">${x[1]}</span></div>`}).join('')}
+document.querySelectorAll('.metric-tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.metric-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderMetric(b.dataset.metric)});renderMetric('content');
+
+function updateBudget(){const scale=+document.getElementById('resolution').value,target=+document.getElementById('targetFps').value,cost=8*scale,budget=1000/target,pct=cost/budget*100;document.getElementById('costMs').textContent=cost.toFixed(2)+' ms';document.getElementById('frameMs').textContent=budget.toFixed(2)+' ms';document.getElementById('costFill').style.width=Math.min(100,pct)+'%';document.getElementById('costFill').style.background=pct>100?'var(--red)':pct>65?'var(--amber)':'var(--green)';document.getElementById('budgetText').textContent=`占 ${target} FPS 整帧预算的 ${pct.toFixed(1)}%${pct>100?'，模型时间已超预算':''}`;document.getElementById('exclusiveFps').textContent='≈'+Math.round(1000/cost)+' FPS';document.getElementById('assumption').textContent=scale===1?'4K / RTX 5090 为报告实测；仍不含游戏其余 GPU 工作。':'推算值：假设成本随像素数线性变化，未考虑固定开销、带宽、占用率与 kernel scaling。'}document.getElementById('resolution').onchange=updateBudget;document.getElementById('targetFps').onchange=updateBudget;updateBudget();
+
+const sections=[...document.querySelectorAll('main section')],links=[...document.querySelectorAll('.nav a')];const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id))}}),{rootMargin:'-25% 0px -65%'});sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
