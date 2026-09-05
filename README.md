@@ -28,7 +28,7 @@ This repository contains a Chinese and an English interactive technical review o
 - `zh/index.html`：中文版交互式报告
 - `en/index.html`：English interactive report
 - `docs/terms.md`：中英专业术语解释
-- `docs/benchmarks.md`：报告指标、benchmark 数值与独立测试计划
+- `docs/benchmarks.md`：报告指标、benchmark 数值与独立测试计划\n- `docs/rendering-pipelines.md`：DINOv2、LPIPS、albedo/normal/depth 与 PT/non-PT 流程详解
 - `.github/workflows/pages.yml`：GitHub Pages 自动部署工作流
 - `dist/index.html`：备用静态报告副本
 
