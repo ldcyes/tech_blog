@@ -39,3 +39,10 @@ This repository contains a Chinese and an English interactive technical review o
 - [RTX Blackwell GPU Architecture](https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf)
 
 交互模拟用于解释报告中的关系，不代表 NVIDIA 未公开的实际网络实现或额外实测结果。The calculator values and architecture candidates are explicitly engineering inferences.
+
+
+## GitHub Pages / 一次性启用
+
+The repository includes `.github/workflows/pages.yml`, which deploys the repository root to GitHub Pages on every push to `main`. If the repository has never used Pages, enable it once in **Settings → Pages → Build and deployment → Source: GitHub Actions**. The expected project URL is <https://ldcyes.github.io/tech_blog/>.
+
+仓库已包含 GitHub Pages 工作流；若 Pages 尚未启用，请在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions** 一次。之后每次推送 `main` 会自动更新。
